@@ -1,0 +1,52 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo
+    container_name: mongo_container
+    volumes:
+      - "db_data:/data/db"
+      - "db_config:/data/configdb"
+      - "./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d"
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=adminpassword
+      - MONGO_INITDB_DATABASE=mydb
+      - MONGO_INITDB_USER=user
+      - MONGO_INITDB_PASSWORD=userpasswd
+  api:
+    build: ./api
+    container_name: api_container
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongo
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    environment:
+      - MONGO_URL=mongo:27017/mydb
+      - MONGO_USER=user
+      - MONGO_PASSWORD=userpasswd
+  client:
+    build: ./client
+    container_name: client_container
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true
+    depends_on:
+      - api
+    environment:
+      - WDS_SOCKET_PORT=3000
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./client:/app
+      - /client/node_modules
+volumes:
+  db_data:
+    driver: local
+  db_config:
+    driver: local
